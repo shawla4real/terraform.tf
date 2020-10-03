@@ -1,0 +1,229 @@
+provider "aws" {
+
+region = "us-east-1"
+
+}
+
+
+
+# Create a VPC
+
+resource "aws_vpc" "solaterraform" {
+
+cidr_block = "10.0.0.0/16"
+
+
+
+tags = {
+
+Name = "solaterraform"
+
+}
+
+}
+
+resource "aws_subnet" "pubb" {
+
+vpc_id = "${aws_vpc.solaterraform.id}"
+
+cidr_block = "10.0.1.0/24"
+
+map_public_ip_on_launch = true
+
+
+
+tags = {
+
+Name = "pubb"
+
+}
+
+}
+
+resource "aws_subnet" "pub22" {
+
+vpc_id = "${aws_vpc.solaterraform.id}"
+
+cidr_block = "10.0.2.0/24"
+
+map_public_ip_on_launch = true
+
+
+
+tags = {
+
+Name = "pub22"
+
+}
+
+}
+
+resource "aws_internet_gateway" "solatgGW" {
+
+vpc_id = "${aws_vpc.solaterraform.id}"
+
+
+
+tags = {
+
+Name = "solatgGW"
+
+}
+
+}
+
+resource "aws_route_table" "solaroute" {
+
+vpc_id = "${aws_vpc.solaterraform.id}"
+
+
+
+route {
+
+cidr_block = "0.0.0.0/0"
+
+gateway_id = "${aws_internet_gateway.solatgGW.id}"
+
+}
+
+
+
+tags = {
+
+Name = "solaroute"
+
+}
+
+}
+
+resource "aws_route_table_association" "solaroute" {
+
+subnet_id = "${aws_subnet.pubb.id}"
+
+route_table_id = "${aws_route_table.solaroute.id}"
+
+}
+
+
+
+resource "aws_security_group" "terra-SG" {
+
+name = "terra-SG"
+
+description = "Allow TLS inbound traffic"
+
+vpc_id = "${aws_vpc.solaterraform.id}"
+
+
+
+ingress {
+
+from_port = 22
+
+to_port = 22
+
+protocol = "tcp"
+
+cidr_blocks = ["0.0.0.0/0"]
+
+}
+
+ingress {
+
+from_port = 80
+
+to_port = 80
+
+protocol = "tcp"
+
+cidr_blocks = ["0.0.0.0/0"]
+
+}
+
+egress {
+
+from_port = 0
+
+to_port = 0
+
+protocol = "-1"
+
+cidr_blocks = ["0.0.0.0/0"]
+
+}
+
+ingress {
+
+from_port = 443
+
+to_port = 443
+
+protocol = "tcp"
+
+cidr_blocks = ["0.0.0.0/0"]
+
+}
+
+ingress {
+
+from_port = 8080
+
+to_port = 8080
+
+protocol = "tcp"
+
+cidr_blocks = ["0.0.0.0/0"]
+
+}
+
+tags = {
+
+Name = "terra-SG"
+
+}
+
+}
+
+
+
+resource "aws_route_table_association" "solaroute1" {
+
+subnet_id = "${aws_subnet.pub22.id}"
+
+route_table_id = "${aws_route_table.solaroute.id}"
+
+}
+
+#create Ec2-instance
+
+resource "aws_instance" "web" {
+
+ami = "ami-000db10762d0c4c05"
+
+instance_type = "t2.micro"
+
+subnet_id = "${aws_subnet.pubb.id}"
+
+key_name = "classkey"
+
+user_data = <<-EOF
+
+#! /bin/bash
+
+sudo yum update -y
+
+sudo yum install httpd -y
+
+sudo systemctl start httpd
+
+EOF
+
+
+
+tags = {
+
+Name = "Sola-Terraform instance"
+
+}
+
+}
