@@ -3,7 +3,7 @@ provider "aws" {
 }
 
 # Create a VPC
-resource "jp_vpc" "example" {
+resource "aws_vpc" "testinghm" {
   cidr_block = "10.0.0.0/16"
 }
 
